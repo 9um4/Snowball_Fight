@@ -1,0 +1,96 @@
+options:
+	prefix: &7[&bSnowball&7]&f
+
+on join:
+	if {snowball_game} is set:
+		add 0 to {snowball_score::*}
+		set {snowball_name::%player%} to {i}
+		add 1 to {i}
+
+command /눈싸움 [<text>]:
+	trigger:
+		if player is op:
+			if arg-1 is not set:
+				message "{@prefix} /눈싸움 [시작/종료]"
+			else if arg-1 is "시작":
+				if {snowball_game} is not set:
+					broadcast "{@prefix} 눈싸움 게임을 시작합니다."
+					set {snowball_game} to 1
+					set {i} to 0
+					loop all players:
+						add loop-player to {_players::*}
+						set {snowball_name::%loop-player%} to {_i}
+						set {snowball_score::%{_i}%} to 0
+						add 1 to {i}
+					set {snowball_target} to {_players::1}
+					broadcast "{@prefix} 이번 목표는 %{snowball_target}%입니다!"
+			else if arg-1 is "종료":
+				if {snowball_game} is not set:
+					message "{@prefix} 게임이 진행중이 아닙니다!"
+				else:
+					broadcast "{@prefix} %player%님이 게임을 종료하셨습니다."
+					set {i} to 0
+					loop {snowball_name::*}:
+						message "{@prefix} %{snowball_name::%loop-value%}%님, %{snowball_score::%{snowball_name::%loop-value%}%}%점."
+					clear {snowball_game}
+					clear {snowball_target}
+			else if arg-1 is "초기화":
+				if {snowball_game} is set:
+					message "{@prefix} 게임이 진행중입니다!"
+				else:
+					clear {snowball_name::*}
+					clear {snowball_score::*}
+					clear {i}
+			clear {_players::*}
+		else:
+			message "{@prefix} 이 명령어를 사용할 권한이 없습니다."
+
+command /무한눈덩이:
+	trigger:
+		if {snowball_game} is 1:
+			give 1 snowball named "&e[EVENT] &d무한눈덩이" to player
+
+command /value [<text>]:
+	trigger:
+		message "%{%arg-1%}%"
+
+command /score:
+	trigger:
+		send "%{snowball_score::%{snowball_name::%player%}%}%"
+
+on rightclick holding snowball:
+	if {snowball_game} is 1:
+		if name of player's tool is "&e[EVENT] &d무한눈덩이":
+			wait 1 tick
+			give 1 snowball named "&e[EVENT] &d무한눈덩이" to player
+
+on damage:
+	if {snowball_game} is 1:
+		if victim's name is {snowball_target}:
+			if event-projectile is snowball:
+				set {_p} to shooter of event-projectile
+				set {snowball_target} to {_p}
+				add 1 to {snowball_score::%{snowball_name::%{_p}%}%}
+				broadcast "{@prefix} 이번 목표는 %{snowball_target}%입니다!"
+
+
+every 1 seconds:
+	if {snowball_game} is 1:
+		if {snowball_target} is not online:
+			loop all players:
+				add loop-player to {_players::*}
+			set {snowball_target} to {_players::1}
+			broadcast "{@prefix} 이번 목표는 %{snowball_target}%입니다!"
+
+#			command /sidebar <text>:
+#				trigger:
+#					if arg 1 is "on":
+#						wipe player sidebar
+#						set name of sidebar of player to  "&6눈덩이 점수"
+#						set score "&21위: %{1위}% %{1위 점수}%" in sidebar of player to 5
+#						set score "&22위: %{2위}% %{2위 점수}%" in sidebar of player to 4
+#						set score "&23위: %{3위}% %{3위 점수}%" in sidebar of player to 3
+#						set score "&24위: %{4위}% %{4위 점수}%" in sidebar of player to 2
+#						set score "&25위: %{5위}% %{5위 점수}%" in sidebar of player to 1
+#					else if arg 1 is "off":
+#						wipe player sidebar
